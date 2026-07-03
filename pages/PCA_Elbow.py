@@ -90,9 +90,11 @@ with right_col:
     exclude_cols = {'kecamata', 'kecamatan', 'kab_kota', 'year', 'month',
                     'lon', 'lat', 'PC1', 'PC2', 'cluster'}
     feat_cols = [c for c in df.columns if c not in exclude_cols]
+    cat_cols  = {'TEXTURE_USDA', 'DRAINAGE'}
+    agg_dict  = {col: (lambda x: x.mode()[0]) if col in cat_cols else 'mean' for col in feat_cols}
     karakteristik_df = (
-        df.groupby('cluster')[feat_cols]
-        .mean(numeric_only=True)
+        df.groupby('cluster')
+        .agg(agg_dict)
         .round(3)
         .reset_index()
     )
