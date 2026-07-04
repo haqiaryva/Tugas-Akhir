@@ -101,20 +101,23 @@ with right_col:
     )
     st.plotly_chart(fig_table, use_container_width=True, config={"staticPlot": True})
 
-# ── Peta Sebaran Cluster (semua tahun digabung) ────────────────────────────────
+# ── Peta Sebaran Cluster (2022–2024, klaster stabil/tetap) ────────────────────
 st.markdown('<h2 class="subheader">Peta Sebaran Cluster dalam 3 Tahun</h2>', unsafe_allow_html=True)
 
-map_data = main_data.copy()
-map_data['cluster'] = map_data['cluster'].astype(str).apply(lambda x: f"Cluster {x}")
+# Tiap kecamatan memiliki klaster yang sama di 2022, 2023, 2024 (status Tetap)
+# Gunakan cluster_2022 sebagai representasi stabil 3 tahun
+perubahan_df = pd.read_csv('perubahan_cluster_antar_tahun.csv')
+perubahan_df = perubahan_df.rename(columns={'kecamatan': 'kecamata'})
+perubahan_df['cluster'] = perubahan_df['cluster_2022'].astype(str).apply(lambda x: f"Cluster {x}")
 
 fig_map = px.choropleth_mapbox(
-    map_data,
+    perubahan_df,
     geojson=geojson_bandung,
     locations="kecamata",
     featureidkey="properties.kecamata",
     color="cluster",
     color_discrete_sequence=px.colors.qualitative.Set1,
-    category_orders={"cluster": sorted(map_data['cluster'].unique())},
+    category_orders={"cluster": sorted(perubahan_df['cluster'].unique())},
     mapbox_style="carto-positron",
     zoom=10,
     center={"lat": -6.9175, "lon": 107.6191},
