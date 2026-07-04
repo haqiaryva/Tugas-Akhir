@@ -18,27 +18,25 @@ CSS = """
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
-PCA_DIR = 'PCA Elbow n Sil'
+NEW_DIR = 'New PCA El n Sil'
 
 # ── Load model & data ──────────────────────────────────────────────────────────
 @st.cache_resource
 def load_models():
-    with open(f'{PCA_DIR}/scaler.pkl', 'rb') as f:
+    with open(f'{NEW_DIR}/scaler(0,31).pkl', 'rb') as f:
         scaler = pickle.load(f)
-    with open(f'{PCA_DIR}/pca_reducer.pkl', 'rb') as f:
+    with open(f'{NEW_DIR}/pca_reducer(0,31).pkl', 'rb') as f:
         pca = pickle.load(f)
-    with open(f'{PCA_DIR}/kmeans_elbow.pkl', 'rb') as f:
-        kmeans = pickle.load(f)
-    return scaler, pca, kmeans
+    return scaler, pca
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv('hasil_kmeans_umap.csv')
+    df = pd.read_csv(f'{NEW_DIR}/main_data_with_pred(0,31).csv')
     with open('BandungRaya_merged.geojson') as f:
         geojson = json.load(f)
     return df, geojson
 
-scaler, pca, kmeans = load_models()
+scaler, pca = load_models()
 main_data, geojson_bandung = load_data()
 
 try:
@@ -46,16 +44,14 @@ try:
 except FileNotFoundError:
     main_image = None
 
-# ── Terapkan PCA pipeline ──────────────────────────────────────────────────────
+# ── Hitung PC1 & PC2 untuk scatter ────────────────────────────────────────────
 FEATURE_COLS = ['NDVI', 'NDWI', 'elevation', 'slope', 'kepadatan',
                 'rainfall', 'TEXTURE_USDA', 'DRAINAGE', 'AWC', 'GFI']
 
 df = main_data.copy()
-X_scaled = scaler.transform(df[FEATURE_COLS])
-X_pca    = pca.transform(X_scaled)
-df['cluster'] = kmeans.predict(X_pca)
-df['PC1']     = X_pca[:, 0]
-df['PC2']     = X_pca[:, 1]
+X_pca      = pca.transform(scaler.transform(df[FEATURE_COLS]))
+df['PC1']  = X_pca[:, 0]
+df['PC2']  = X_pca[:, 1]
 
 # ── Header ─────────────────────────────────────────────────────────────────────
 st.markdown('<h1 class="title">Cluster Banjir Pada Bandung Raya (PCA Elbow)</h1>', unsafe_allow_html=True)
@@ -88,7 +84,7 @@ with right_col:
     st.markdown('<h2 class="subheader">Karakteristik Cluster</h2>', unsafe_allow_html=True)
 
     exclude_cols = {'kecamata', 'kecamatan', 'kab_kota', 'year', 'month',
-                    'lon', 'lat', 'PC1', 'PC2', 'cluster'}
+                    'lon', 'lat', 'PC1', 'PC2', 'cluster', 'cluster_sil'}
     feat_cols = [c for c in df.columns if c not in exclude_cols]
     cat_cols  = {'TEXTURE_USDA', 'DRAINAGE'}
     agg_dict  = {col: (lambda x: x.mode()[0]) if col in cat_cols else 'mean' for col in feat_cols}
@@ -99,7 +95,7 @@ with right_col:
         .reset_index()
     )
 
-    n = len(karakteristik_df)
+    n      = len(karakteristik_df)
     cell_h = max(60, (600 - 40) // n)
 
     fig_table = go.Figure(data=[go.Table(
@@ -128,7 +124,7 @@ with right_col:
 # ── Peta per Tahun ─────────────────────────────────────────────────────────────
 st.markdown('<h2 class="subheader">Peta Sebaran Cluster per Tahun</h2>', unsafe_allow_html=True)
 
-years = sorted(df['year'].unique())
+years    = sorted(df['year'].unique())
 map_cols = st.columns(len(years))
 
 for col, year in zip(map_cols, years):
