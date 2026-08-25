@@ -6,5 +6,6 @@ pg = st.navigation([
     st.Page("pages/UMAP.py",          title="UMAP"           ),
     st.Page("pages/PCA_Elbow.py",     title="PCA Elbow"     ),
     st.Page("pages/PCA_Silhouette.py",title="PCA Silhouette" ),
+    #st.Page("pages/Validasi.py",      title="Validasi"       ),
 ])
 pg.run()

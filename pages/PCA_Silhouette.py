@@ -76,8 +76,16 @@ with left_col:
         template='plotly',
         category_orders={'cluster_label': sorted(scatter_df['cluster_label'].unique())}
     )
-    fig.update_traces(marker=dict(size=5, opacity=0.7))
+    fig.update_traces(marker=dict(size=5, opacity=0.4))
     fig.update_layout(height=600, legend_title_text='Cluster')
+
+    _cen = scatter_df.groupby('cluster_label')[['PC1', 'PC2']].mean().reset_index()
+    fig.add_trace(go.Scatter(
+        x=_cen['PC1'], y=_cen['PC2'], mode='markers',
+        marker=dict(symbol='x', size=16, color='white',
+                    line=dict(color='black', width=3)),
+        name='Centroid',
+    ))
     st.plotly_chart(fig, use_container_width=True)
 
 with right_col:
@@ -165,3 +173,14 @@ for col, year in zip(map_cols, years):
             )
         )
         st.plotly_chart(fig_year, use_container_width=True)
+
+CLUSTER_DESC = {
+    0: {"Label": "Rawan",       "Deskripsi": "Dataran rendah"},
+    1: {"Label": "Tidak Rawan", "Deskripsi": "Dataran tinggi"},
+}
+st.markdown("**Keterangan Klaster**")
+desc_df = pd.DataFrame([
+    {"Klaster": f"Cluster {k}", "Label": v["Label"], "Deskripsi": v["Deskripsi"]}
+    for k, v in CLUSTER_DESC.items()
+])
+st.dataframe(desc_df, hide_index=True, use_container_width=True)
